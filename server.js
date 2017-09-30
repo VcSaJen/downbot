@@ -1,7 +1,10 @@
 //  OpenShift sample Node application
 var express = require('express'),
     app     = express(),
-    morgan  = require('morgan');
+    morgan  = require('morgan'),
+    path    = require('path'),
+    fs      = require('fs'),
+    contentTypes = require('./utils/content-types');
     
 Object.assign=require('object-assign')
 
@@ -72,6 +75,39 @@ app.get('/', function (req, res) {
   } else {
     res.render('index.html', { pageCountMessage : null});
   }
+});
+
+function padToTwo(number) {
+  if (number<=99) { number = ("0"+number).slice(-2); }
+  return number;
+}
+
+function randomInt(low, high) {
+    return Math.floor(Math.random() * (high - low) + low);
+}
+
+app.get('/weeping_angel.png', function (req, res) {
+  let picpath = '/weeping_angel/'+padToTwo(randomInt(1,8))+'.png';
+  fs.readFile('./static' + picpath, function (err, data) {
+    if (err) {
+      res.writeHead(404);
+      res.end('Not found');
+    } else {
+      let ext = path.extname(picpath).slice(1);
+      if (contentTypes[ext]) {
+        res.setHeader('Content-Type', contentTypes[ext]);
+      }
+      if (ext === 'html') {
+        res.setHeader('Cache-Control', 'no-cache, no-store');
+      }
+      res.setHeader('Pragma-directive', 'no-cache');
+      res.setHeader('Cache-directive', 'no-cache');
+      res.setHeader('Cache-control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.end(data);
+    }
+  });
 });
 
 app.get('/pagecount', function (req, res) {
